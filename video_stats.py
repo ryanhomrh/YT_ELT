@@ -53,7 +53,10 @@ def get_video_ids(playlistId):
 
     base_url = f"https://youtube.googleapis.com/youtube/v3/playlistItems?part=ContentDetails&maxResults={maxResults}&playlistId={playlistId}&key={API_KEY}"
 
-## For the first run, since we don't have a pagetoken we skip line 68 of the 
+## For the first run, since we don't have a pagetoken we skip the If pageToken check.
+## the while loop goes through a get request on the url and then we use a for loop to grab video ids for each page. 
+## if there is a valid pagetoken then we set the pageToken variable equal to the current iteration of nextPageToken from the get request and then we loop through it again
+## when we reach the end and there are no more valid nextPageTokens then this breaks the while loop
     try:
 
         while True:
