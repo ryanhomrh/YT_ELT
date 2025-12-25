@@ -1,5 +1,6 @@
 import requests
 import json
+from datetime import date
 
 ##can use 
 import os
@@ -12,6 +13,7 @@ CHANNEL_HANDLE = "MrBeast"
 maxResults = 50
 
 def get_playlist_id():
+    print("▶ Starting get_playlist_id()...")
 
     try:
 
@@ -37,8 +39,8 @@ def get_playlist_id():
 
         channel_playlistId = channel_items["contentDetails"]["relatedPlaylists"]["uploads"]
 
-        print(channel_playlistId)
-
+        ##print(channel_playlistId)
+        print(f"✓ Completed get_playlist_id() - Found playlist: {channel_playlistId}")
         return channel_playlistId
 
     except requests.exceptions.RequestException as e:
@@ -46,6 +48,7 @@ def get_playlist_id():
 
 
 def get_video_ids(playlistId):
+    print(f"▶ Starting get_video_ids() for playlist: {playlistId}")
 
     video_ids = []
 
@@ -79,7 +82,7 @@ def get_video_ids(playlistId):
 
             if not pageToken:
                 break
-
+        print(f"✓ Completed get_video_ids() - Retrieved {len(video_ids)} video IDs")
         return video_ids
 
     
@@ -91,6 +94,7 @@ def get_video_ids(playlistId):
 
 
 def extract_video_data(video_ids):
+    print(f"▶ Starting extract_video_data() with {len(video_ids)} video IDs...")
     extracted_data = []
 
     ##this is a helper function to create a batch list of up to 50 video ids to help extract video data
@@ -100,8 +104,14 @@ def extract_video_data(video_ids):
 
 
     try:
+        total_batches = (len(video_ids) + maxResults - 1) // maxResults
+        current_batch = 0
 
         for batch in batch_list(video_ids, maxResults):
+            
+            current_batch += 1
+            print(f"  Processing batch {current_batch}/{total_batches} ({len(batch)} videos)...")
+
             video_ids_str = ",".join(batch)
 
             url = f"https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&part=snippet&part=statistics&id={video_ids_str}&key={API_KEY}"
@@ -129,14 +139,43 @@ def extract_video_data(video_ids):
                 }
 
                 extracted_data.append(video_data)
-
+        print(f"✓ Completed extract_video_data() - Extracted data for {len(extracted_data)} videos")
         return extracted_data
 
     except requests.exceptions.RequestException as e:
         raise e
+    
+
+
+def save_to_json(extracted_data):
+    print(f"▶ Starting save_to_json() with {len(extracted_data)} records...")
+    file_path = f"./data/YT_data_{date.today()}.json"
+
+    ##this is context management of how to handle file
+    with open(file_path, "w", encoding="utf-8") as json_outfile:
+        json.dump(extracted_data, json_outfile, indent=4, ensure_ascii=False)
+    
+    print(f"✓ Completed save_to_json() - Saved to {file_path}")
+
 
 ##__name__ is a special built in variable. When this file is run directly, __name__ is called __main__. This bottom check allows us to only run this script when it is called directly and not imported as a module.
 if __name__ == "__main__":
+    print("=" * 50)
+    print("YouTube Data Extraction Pipeline Started")
+    print("=" * 50)
+
     playlistId = get_playlist_id()
+    print()
+
     video_ids = get_video_ids(playlistId)
-    extract_video_data(video_ids)
+    print()
+
+    video_data = extract_video_data(video_ids)
+    print()
+
+    save_to_json(video_data)
+    print()
+
+    print("=" * 50)
+    print("Pipeline Completed Successfully!")
+    print("=" * 50)
