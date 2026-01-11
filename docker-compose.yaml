@@ -107,6 +107,7 @@ x-airflow-common:
     postgres:
       condition: service_healthy
  
+ 
 services:
   postgres:
     container_name: postgres
